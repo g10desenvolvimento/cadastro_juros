@@ -1,0 +1,776 @@
+unit FuncoesVenda;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls, Produto, ProdutoRN,
+  Mask, Bematech, Validar, MaskUtils, Data;
+
+type
+
+  TFuncoesVenda = class
+  private
+    { Private Declarations }
+    iRetorno: integer;
+    bRetornoEstendido: boolean;
+    Validar: TValidar;
+  public
+    { Public Declarations }
+    procedure abreCupom(cpfCnpj: string; iImpressora: integer);
+    procedure iniciaFechamentoCupom(sacrescimoDesconto, stipoAcrescimoDesconto, sValor: string; iImpressora: integer);
+    procedure terminaFechamentoCupom(sMensagem: string; iImpressora: integer);
+    procedure analisaRetorno;
+    procedure retornoImpressora;
+    procedure efetuaFormaPagamento(sformaPagamento, svalorFormaPagamento: string; iImpressora: integer);
+    procedure cancelaCupom(iImpressora: integer);
+    procedure cancelaItemAnterior(iImpressora: integer);
+    procedure cancelaItemGenerico(sNumeroItem: string; iImpressora: integer);
+    procedure leituraX(iImpressora: integer);
+    procedure reducaoZ(iImpressora: integer);
+    procedure aberturaDoDia(sValor: string; FormaPgto: string; iImpressora: integer);
+    procedure FechamentoDoDia(iImpressora: integer);
+    procedure downloadMFD(sArquivo         : string;
+                          sTipoDownload    : string;
+                          sParametroInicial: string;
+                          sParametroFinal  : string;
+                          sUsuarioECF      : string;
+                          iImpressora: integer);
+    procedure vendeItem(sCodigo,
+                        sDescricao,
+                        sAliquota,
+                        sTipoqtde,
+                        sQtde: string;
+                        iCasadecimais: integer;
+                        sValor,
+                        sTipodesconto, sValordesc: string; iImpressora: integer);
+    function numeroCupom(iImpressora: integer): string;
+    function aliquotaProgramada(sAliquota: string): string;
+    function cupomAberto(iImpressora: integer): boolean;
+    function programacaoAliquota(sAliquota: string; iIcmsIss: integer;
+                                 iImpressora: integer): integer;
+    function relatorioSintegra(iRelatorios : Integer;
+                               sArquivo    : string;
+                               sMes        : string;
+                               sAno        : string;
+                               sRazaoSocial: string;
+                               sEndereco   : string;
+                               sNumero     : string;
+                               sComplemento: string;
+                               sBairro     : string;
+                               sCidade     : string;
+                               sCEP        : string;
+                               sTelefone   : string;
+                               sFax        : string;
+                               sContato    : string;
+                               iImpressora: integer): integer;
+    function geraRelatorioSintegraMFD(iRelatorios : integer;
+                                      sArqOrigem  : string;
+                                      sArqDestino : string;
+                                      sMes        : string;
+                                      sAno        : string;
+                                      sRazaoSocial: string;
+                                      sEndereco   : string;
+                                      sNumero     : string;
+                                      sComplemento: string;
+                                      sBairro     : string;
+                                      sCidade     : string;
+                                      sCEP        : string;
+                                      sTelefone   : string;
+                                      sFax        : string;
+                                      sContato    : string;
+                                      iImpressora: integer): integer;
+
+    procedure AbrirGaveta(iImpressora: integer);
+    function GavetaAberta(iImpressora: integer): boolean;
+    function dataHoraECF(iImpressora: integer): string;
+    function dataHoraECFDiferenteSistema: boolean;
+    function impressoraLigada(iImpressora: integer): boolean;
+    constructor Create;
+  end;
+
+implementation
+
+procedure TFuncoesVenda.aberturaDoDia(sValor, FormaPgto: string;
+ iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_AberturaDoDia(PChar(sValor), PChar(FormaPgto));
+       analisaRetorno;
+       retornoImpressora;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.abreCupom(CpfCnpj: string; iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_AbreCupom(PChar(CpfCnpj));
+       analisaRetorno;
+       retornoImpressora;
+    end;
+  end;
+end;
+
+procedure TFuncoesVenda.analisaRetorno;
+begin
+  if iRetorno = 0 then
+     raise Exception.Create('Erro de Comunicação!');
+     //Application.MessageBox( 'Erro de Comunicação !', 'Erro',MB_IconError + MB_OK);
+
+  if iRetorno = -1 Then
+     raise Exception.Create('Erro de Execução na Função. Verifique!');
+     //Application.MessageBox( 'Erro de Execução na Função. Verifique!', 'Erro', MB_IconError + MB_OK);
+
+  if iRetorno = -2  then
+     raise Exception.Create('Parâmetro Inválido!');
+     //Application.MessageBox( 'Parâmetro Inválido !', 'Erro',MB_IconError + MB_OK);
+
+  if iRetorno = -3  then
+     raise Exception.Create('Alíquota não programada!');
+     //Application.MessageBox( 'Alíquota não programada !', 'Atenção',MB_IconInformation + MB_OK);
+
+  If iRetorno = -4 Then
+     raise Exception.Create('Arquivo BemaFI32.INI não encontrado. Verifique!');
+     //Application.MessageBox( 'Arquivo BemaFI32.INI não encontrado. Verifique!', 'Atenção', MB_IconInformation + MB_OK);
+
+  If iRetorno = -5 Then
+     raise Exception.Create('Erro ao Abrir a Porta de Comunicação');
+     //Application.MessageBox( 'Erro ao Abrir a Porta de Comunicação', 'Erro', MB_IconError + MB_OK);
+
+  If iRetorno = -6 Then
+     raise Exception.Create('Impressora Desligada ou Desconectada');
+     //Application.MessageBox( 'Impressora Desligada ou Desconectada', 'Atenção', MB_IconInformation + MB_OK);
+
+  If iRetorno = -7 Then
+     raise Exception.Create('Banco Não Cadastrado no Arquivo BemaFI32.ini');
+     //Application.MessageBox( 'Banco Não Cadastrado no Arquivo BemaFI32.ini', 'Atenção', MB_IconInformation + MB_OK);
+
+  If iRetorno = -8 Then
+     raise Exception.Create('Erro ao Criar ou Gravar no Arquivo Retorno.txt ou Status.txt');
+     //Application.MessageBox( 'Erro ao Criar ou Gravar no Arquivo Retorno.txt ou Status.txt', 'Erro', MB_IconError + MB_OK);
+
+  if iRetorno = -18 then
+     raise Exception.Create('Não foi possível abrir arquivo INTPOS.001!');
+     //Application.MessageBox( 'Não foi possível abrir arquivo INTPOS.001 !', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -19 then
+     raise Exception.Create('Parâmetro diferentes!');
+     //Application.MessageBox( 'Parâmetro diferentes !', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -20 then
+     raise Exception.Create('Transação cancelada pelo Operador!');
+     //Application.MessageBox( 'Transação cancelada pelo Operador !', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -21 then
+     raise Exception.Create('A Transação não foi aprovada!');
+     //Application.MessageBox( 'A Transação não foi aprovada !', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -22 then
+     raise Exception.Create('Não foi possível terminal a Impressão!');
+     //Application.MessageBox('Não foi possível terminal a Impressão !', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -23 then
+     raise Exception.Create('Não foi possível terminal a Operação!');
+     //Application.MessageBox( 'Não foi possível terminal a Operação !', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -24 then
+     raise Exception.Create('Forma de pagamento não programada.');
+     //Application.MessageBox( 'Forma de pagamento não programada.', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -25 then
+     raise Exception.Create('Totalizador não fiscal não programado. ');
+     //Application.MessageBox( 'Totalizador não fiscal não programado.', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -26 then
+     raise Exception.Create('Transação já Efetuada!');
+     //Application.MessageBox( 'Transação já Efetuada !', 'Atenção', MB_IconInformation + MB_OK);
+
+  if iRetorno = -28 then
+     raise Exception.Create('Não há Informações para serem Impressas!');
+     //Application.MessageBox( 'Não há Informações para serem Impressas !', 'Atenção', MB_IconInformation + MB_OK);
+end;
+
+procedure TFuncoesVenda.cancelaCupom(iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_CancelaCupom();
+
+       if iRetorno = 1 then
+          Application.MessageBox(PChar('Cupom Cancelado !'), 'Atenção', MB_OK)
+       else
+       begin
+         analisaRetorno;
+         retornoImpressora;
+       end;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.cancelaItemAnterior(iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_CancelaItemAnterior();
+
+       if iRetorno = 1 then
+          Application.MessageBox( 'Item Anterior Cancelado !', 'Atenção', MB_OK)
+       else
+       begin
+         analisaRetorno;
+         retornoImpressora;
+       end;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.cancelaItemGenerico(sNumeroItem: string; iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_CancelaItemGenerico(pchar(sNumeroItem));
+
+       if iRetorno = 1 then
+          Application.MessageBox(PChar('Item '+sNumeroItem+' Cancelado !'), 'Atenção', MB_OK)
+       else
+       begin
+         analisaRetorno;
+         retornoImpressora;
+       end;
+     end;
+  end;
+end;
+
+constructor TFuncoesVenda.Create;
+begin
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+function TFuncoesVenda.cupomAberto(iImpressora: integer): boolean;
+var
+  iACK, iST1, iST2: Integer;
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iACK := 0;
+       iST1 := 0;
+       iST2 := 0;
+
+       iRetorno := Bematech_FI_VerificaEstadoImpressora(iACK, iST1, iST2);
+
+       result := (iST1 >= 2);
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.downloadMFD(sArquivo, sTipoDownload,
+  sParametroInicial, sParametroFinal, sUsuarioECF: string;
+  iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_DownloadMFD(sArquivo,
+                                           sTipoDownload,
+                                           sParametroInicial,
+                                           sParametroFinal,
+                                           sUsuarioECF);
+       analisaRetorno;
+       retornoImpressora;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.efetuaFormaPagamento(sFormaPagamento,
+  sValorFormaPagamento: string; iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+      iRetorno := Bematech_FI_EfetuaFormaPagamento(pchar(sFormaPagamento), pchar(sValorFormaPagamento));
+      analisaRetorno;
+      retornoImpressora;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.FechamentoDoDia(iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_FechamentoDoDia;
+       analisaRetorno;
+       retornoImpressora;
+     end;
+  end;
+end;
+
+function TFuncoesVenda.geraRelatorioSintegraMFD(iRelatorios: integer;
+  sArqOrigem, sArqDestino, sMes, sAno, sRazaoSocial, sEndereco, sNumero,
+  sComplemento, sBairro, sCidade, sCEP, sTelefone, sFax,
+  sContato: string; iImpressora: integer): integer;
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_GeraRelatorioSintegraMFD(iRelatorios,
+                                                        PChar(sArqOrigem),
+                                                        PChar(sArqDestino),
+                                                        PChar(sMes),
+                                                        PChar(sAno),
+                                                        PChar(sRazaoSocial),
+                                                        PChar(sEndereco),
+                                                        PChar(sNumero),
+                                                        PChar(sComplemento),
+                                                        PChar(sBairro),
+                                                        PChar(sCidade),
+                                                        PChar(sCEP),
+                                                        PChar(sTelefone),
+                                                        PChar(sFax),
+                                                        PChar(sContato));
+       analisaRetorno;
+       retornoImpressora;
+       result := iRetorno;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.iniciaFechamentoCupom(sAcrescimoDesconto,
+  sTipoAcrescimoDesconto, sValor: string;
+  iImpressora: integer);
+var
+  sAcreDesc: string;
+  sTipoAcreDesc: string;
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       //sAcreDesc     := sAcrescimoDesconto;
+       //sTipoAcreDesc := sTipoAcrescimoDesconto;
+
+       sAcreDesc     := 'A';
+       sTipoAcreDesc := '$';
+       sValor        := '0,50';
+
+       iRetorno := Bematech_FI_IniciaFechamentoCupom(sAcreDesc, sTipoAcreDesc, sValor);
+
+       analisaRetorno;
+       retornoImpressora;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.leituraX(iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_LeituraX();
+       analisaRetorno;
+       retornoImpressora;
+    end;
+  end;
+end;
+
+function TFuncoesVenda.programacaoAliquota(sAliquota: string;
+  iIcmsIss: integer; iImpressora: integer): integer;
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_ProgramaAliquota(pchar(sAliquota), iIcmsIss);
+
+       analisaRetorno;
+       retornoImpressora;
+
+       result := iRetorno;
+      end;
+  end;
+end;
+
+procedure TFuncoesVenda.reducaoZ(iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_ReducaoZ(pchar(''), pchar(''));
+       analisaRetorno;
+       retornoImpressora;
+      end;
+  end;
+end;
+
+function TFuncoesVenda.relatorioSintegra(iRelatorios: Integer; sArquivo,
+  sMes, sAno, sRazaoSocial, sEndereco, sNumero, sComplemento, sBairro,
+  sCidade, sCEP, sTelefone, sFax, sContato: string;
+  iImpressora: integer): integer;
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_RelatorioSintegraMFD(iRelatorios,
+                                                    PChar(sArquivo),
+                                                    PChar(sMes),
+                                                    PChar(sAno),
+                                                    PChar(sRazaoSocial),
+                                                    PChar(sEndereco),
+                                                    PChar(sNumero),
+                                                    PChar(sComplemento),
+                                                    PChar(sBairro),
+                                                    PChar(sCidade),
+                                                    PChar(sCEP),
+                                                    PChar(sTelefone),
+                                                    PChar(sFax),
+                                                    PChar(sContato));
+       analisaRetorno;
+       retornoImpressora;
+       result := iRetorno;
+      end;
+  end;
+end;
+
+
+
+function TFuncoesVenda.aliquotaProgramada(sAliquota: string): string;
+var
+  iConta: Integer;
+begin
+  for iConta := 1 To 79 Do
+    sAliquota := sAliquota + ' ';
+
+  iRetorno := Bematech_FI_RetornoAliquotas(sAliquota);
+  analisaRetorno;
+  retornoImpressora;
+
+  result := sAliquota;
+end;
+
+procedure TFuncoesVenda.retornoImpressora;
+var
+  iACK, iST1, iST2, iST3: Integer;
+begin
+  iACK := 0;
+  iST1 := 0;
+  iST2 := 0;
+  iST3 := 0;
+
+  if bRetornoEstendido = true then
+     iRetorno := Bematech_FI_RetornoImpressoraMFD( iACK, iST1, iST2, iST3 )
+  else
+     iRetorno := Bematech_FI_RetornoImpressora( iACK, iST1, iST2 );
+
+
+  if iACK = 21 Then
+  begin
+    raise Exception.Create('A Impressora retornou NAK!');
+  end
+  else
+    if bRetornoEstendido = true  then
+       Application.MessageBox( pchar('ACK = 6, ST1 = ' + inttostr( iSt1 ) +
+                                     ', ST2 = ' + inttostr( iSt2 ) +
+                                     ', ST3 = ' + inttostr( iSt3 ) ), 'Retorno da Impressora', MB_IconInformation + MB_OK );
+
+  if iACK = 6 then
+  begin
+    // Verifica ST1
+    if iST1 >= 128 then
+    begin
+      iST1 := iST1 - 128;
+      raise Exception.Create('Fim de Papel!');
+    end;
+
+    if iST1 >= 64  then
+    begin
+      iST1 := iST1 - 64;
+      Application.MessageBox('Pouco Papel!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if  iST1 >= 32 then
+    begin
+      iST1 := iST1 - 32;
+      raise Exception.Create('Erro no Relógio!');
+      //Application.MessageBox('Erro no Relógio!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST1 >= 16  then
+    begin
+      iST1 := iST1 - 16;
+      raise Exception.Create('Impressora em ERRO!');
+      //Application.MessageBox('Impressora em ERRO!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST1 >= 8   then
+    begin
+      iST1 := iST1 - 8;
+      raise Exception.Create('CMD não iniciado ESC!');
+      //Application.MessageBox('CMD não iniciado ESC!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST1 >= 4   then
+    begin
+      iST1 := iST1 - 4;
+      raise Exception.Create('Comando Inexistente!');
+      //Application.MessageBox('Comando Inexistente!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST1 >= 2   then
+    begin
+      iST1 := iST1 - 2;
+      Application.MessageBox('Cupom Aberto!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST1 >= 1   then
+    begin
+      iST1 := iST1 - 1;
+      raise Exception.Create('Nº de Parâmetros Invalidos!');
+      //Application.MessageBox('Nº de Parâmetros Invalidos!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    // Verifica ST2
+    if iST2 >= 128 then
+    begin
+      iST2 := iST2 - 128;
+      raise Exception.Create('Tipo de Parâmetro Inválido!');
+      //Application.MessageBox('Tipo de Parâmetro Inválido!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST2 >= 64  then
+    begin
+     iST2 := iST2 - 64;
+     raise Exception.Create('Memória Fiscal Lotada!');
+     //Application.MessageBox('Memória Fiscal Lotada!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST2 >= 32  then
+    begin
+      iST2 := iST2 - 32;
+      raise Exception.Create('CMOS não Volátil!');
+      //Application.MessageBox('CMOS não Volátil!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST2 >= 16  then
+    begin
+      iST2 := iST2 - 16;
+      raise Exception.Create('Alíquota Não Programada!');
+      //Application.MessageBox('Alíquota Não Programada!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST2 >= 8   then
+    begin
+      iST2 := iST2 - 8;
+      raise Exception.Create('Alíquota Lotada!');
+      //Application.MessageBox('Alíquota Lotada!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST2 >= 4   then
+    begin
+      iST2 := iST2 - 4;
+      raise Exception.Create('Cancelamento Não Permitido!');
+      //Application.MessageBox('Cancelamento Não Permitido!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST2 >= 2   then
+    begin
+     iST2 := iST2 - 2;
+     raise Exception.Create('CGC/IE não Programados!');
+     //Application.MessageBox('CGC/IE não Programados!', 'Erro', MB_IconError + MB_OK);
+    end;
+
+    if iST2 >= 1  then
+    begin
+      iST2 := iST2 - 1;
+      raise Exception.Create('Comando não Executado!');
+      //Application.MessageBox('Comando não Executado!', 'Erro', MB_IconError + MB_OK);
+    end;
+  end;
+
+end;
+
+procedure TFuncoesVenda.terminaFechamentoCupom(sMensagem: string;
+  iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_TerminaFechamentoCupom(pchar(sMensagem));
+       analisaRetorno;
+       retornoImpressora;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.vendeItem(sCodigo, sDescricao, sAliquota, sTipoqtde,
+  sQtde: string; iCasadecimais: integer; sValor, sTipodesconto,
+  sValordesc: string; iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+      Validar := TValidar.Create;
+      iRetorno := Bematech_FI_VendeItem(pchar(sCodigo),
+                                        pchar(sDescricao),
+                                        pchar(sAliquota),
+                                        pchar(sTipoQtde),
+                                        pchar(sQtde),
+                                        iCasadecimais,
+                                        pchar(sValor),
+                                        pchar(sTipoDesconto),
+                                        pchar(sValorDesc));
+      analisaRetorno;
+      retornoImpressora;
+      Validar.Free;
+     end;
+  end;
+end;
+
+function TFuncoesVenda.impressoraLigada(iImpressora: integer): boolean;
+var
+  bResult: boolean;
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       try
+          iRetorno := Bematech_FI_VerificaImpressoraLigada;
+          analisaRetorno;
+          retornoImpressora;
+          Result := true;
+       except
+          on E: Exception do
+          begin
+            Result := false;
+            Application.MessageBox(PChar(E.Message), 'Atenção', MB_IconError + MB_OK);
+          end;
+       end;
+     end;
+  end;
+end;
+
+function TFuncoesVenda.numeroCupom(iImpressora: integer): string;
+var
+  sNumeroCupom: string;
+  iConta: integer;
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       for iConta := 1 to 6 do
+         sNumeroCupom := sNumeroCupom + ' ';
+
+       iRetorno := Bematech_FI_NumeroCupom(sNumeroCupom);
+
+       analisaRetorno;
+       retornoImpressora;
+
+       result := sNumeroCupom;
+     end;
+  end;
+end;
+
+procedure TFuncoesVenda.AbrirGaveta(iImpressora: integer);
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_AcionaGaveta;
+       analisaRetorno;
+       retornoImpressora;
+     end;
+  end;
+end;
+
+function TFuncoesVenda.GavetaAberta(iImpressora: integer): boolean;
+var
+  sEstado: string;
+begin
+   case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       iRetorno := Bematech_FI_VerificaEstadoGavetaStr(sEstado);
+       analisaRetorno;
+       retornoImpressora;
+
+       result := (Trim(sEstado) = '1');
+     end;
+  end;
+end;
+
+function TFuncoesVenda.dataHoraECF(iImpressora: integer): string;
+var
+  iCount: integer;
+  sData, sHora, sDataHora: string;
+begin
+  case iImpressora of
+  {Impressora Bematech}
+  1: begin
+       for iCount := 1 to 6 do
+           sData := sData + ' ';
+
+       for iCount := 1 to 6 do
+           sHora := sHora + ' ';
+
+       iRetorno := Bematech_FI_DataHoraImpressora(sData, sHora);
+       analisaRetorno;
+       retornoImpressora;
+
+       sData     := Copy(sData, 1,4)+'20'+Copy(sData, 5,2);
+
+       sDataHora := MaskDoFormatText('99/99/9999 99:99:99;0;', sData+sHora, ' ');
+
+       result    := sDataHora;
+     end;
+  end;
+end;
+
+function TFuncoesVenda.dataHoraECFDiferenteSistema: boolean;
+const
+  sMinutoTolerancia = '00:14:59';
+var
+  Data: TData;
+  sDataHoraSistema, sDataHoraECF: string;
+  sDataSistema, sHoraSistema: string;
+  sDataECF, sHoraECF: string;
+  sDiferencaHora: string;
+  bResult: boolean;
+begin
+  try
+    Data := TData.Create;
+
+    sDataHoraSistema := FormatDateTime('dd/MM/yyyy hh:mm:ss', Data.DateServer);
+    sDataHoraECF     := dataHoraECF(1);
+
+    sDataSistema := Copy(sDataHoraSistema, 1, 10);
+    sDataECF     := Copy(sDataHoraECF, 1, 10);
+
+    sHoraSistema := Copy(sDataHoraSistema, 12, 19);
+    sHoraECF     := Copy(sDataHoraECF, 12, 19);
+
+    bResult := false;
+
+    if (Trim(sDataSistema) = Trim(sDataECF)) then
+    begin
+      sDiferencaHora := Data.difHora(sHoraECF, sHoraSistema);
+
+      if sDiferencaHora > sMinutoTolerancia then
+         bResult := true;
+    end;
+
+    result := bResult;
+  finally
+    Data.Free;
+  end;
+
+end;
+
+end.

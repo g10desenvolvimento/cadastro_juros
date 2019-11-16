@@ -1,0 +1,32 @@
+unit Dados;
+
+interface
+
+uses
+  DadosPessoaFisica, DadosPessoaJuridica, Endereco, Telefone;
+
+type
+  TDados = class
+  private
+    { Private Declarations }
+  public
+    codigo             : Integer;
+    identificador      : string;
+    dadosPessoaFisica  : TDadosPessoaFisica;
+    dadosPessoaJuridica: TDadosPessoaJuridica;
+    Endereco           : TEndereco;
+  constructor Create;
+
+  end;
+
+implementation
+
+constructor TDados.Create;
+begin
+  dadosPessoaFisica   := TDadosPessoaFisica.Create;
+  dadosPessoaJuridica := TDadosPessoaJuridica.Create;
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+end.

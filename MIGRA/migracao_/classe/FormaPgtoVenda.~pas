@@ -1,0 +1,29 @@
+unit FormaPgtoVenda;
+
+interface
+
+uses
+  SysUtils, Variants, Parcela, M;
+
+type
+  TFormaPgtoVenda = class
+  private
+    { Private Declarations }
+  public
+    Parcela   : TParcela;
+    cValor    : currency;
+    Data      : TDateTime;
+    iOperador : integer;
+
+    constructor Create;
+  end;
+
+implementation
+
+constructor TFormaPgtoVenda.Create;
+begin
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+end.

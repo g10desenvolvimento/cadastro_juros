@@ -1,0 +1,62 @@
+unit NotaFiscal;
+
+interface
+
+uses
+   Dados;
+
+type
+  TNotaFiscal = class
+  private
+    { Private Declarations }
+  public
+    codigo : integer;
+    pessoa : TDados;
+    pessoaEmitente : TDados;
+    {
+    cnfjcpf" VARCHAR(14) NOT NULL,
+    inscestadual" VARCHAR(14) NOT NULL,
+    }
+    uf: string[2];
+    dataemissao: TDate;
+    datasaidaentrada : TDate;
+    modelo: string;
+    obs : String;
+    serie: string;
+    numero: string;
+    emitente: string[1];
+    situacao: string[1];
+    valorfrete: extended;
+    valorseguro: extended;
+    despacessorias: extended;
+    modfrete: string[1];
+    cargapessoa: TDados;
+    carganuf: string[2];
+    natOperacao : integer;
+    totalNotaFiscal : Double;
+    {
+
+    cargancnpj: string;
+    carganinscestadual" VARCHAR(15),
+    }
+    cargandata:TDate;
+    carganmodelo: string;
+    cargannumero: string;
+    carganserie: string;
+    carganvalortotal: extended;
+    movimento: string[1];
+    constructor Create;
+  end;
+
+implementation
+
+constructor TNotaFiscal.Create;
+begin
+  pessoa      := TDados.Create;
+  cargapessoa := TDados.Create;
+  pessoaEmitente := TDados.Create;
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+end.

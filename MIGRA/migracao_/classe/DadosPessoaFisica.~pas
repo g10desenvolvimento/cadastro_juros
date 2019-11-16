@@ -1,0 +1,31 @@
+unit DadosPessoaFisica;
+
+interface
+
+uses
+ Controls;
+type
+  TDadosPessoaFisica = class
+  private
+    { Private Declarations }
+  public
+    codigo         : Integer;
+    nome           : String;
+    rg             : String;
+    apelido        : String;
+    sexo           : integer;
+    dataNascimento : TDate;
+    obs            : String;
+    foto           : string;
+  constructor Create;    
+  end;
+
+implementation
+
+constructor TDadosPessoaFisica.Create;
+begin
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+end.

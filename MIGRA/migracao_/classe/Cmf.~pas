@@ -1,0 +1,31 @@
+unit Cmf;
+
+interface
+uses
+  GrupoCmf, Juros, Setor;
+
+type
+  TCmf = class
+  private
+    { Private Declarations }
+  public
+    constructor Create;
+  var
+    codigo     : integer;
+    descricao  : String;
+    grupoCmf   : TGrupoCmf;
+    juros      : TJuros;
+    VistoSetor : array of TSetor;
+  end;
+
+implementation
+
+constructor TCmf.Create;
+begin
+  grupoCmf   := TGrupoCmf.Create;
+  juros      := TJuros.Create;
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+end.

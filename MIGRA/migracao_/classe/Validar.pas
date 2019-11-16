@@ -1,0 +1,775 @@
+unit Validar;
+
+interface
+uses
+  SysUtils, DateUtils, maskutils, Variants, StrUtils ;
+
+type
+  TValidar = class
+  private
+    { Private Declarations }
+  public
+    function VirgulaPonto(str : String) : String;
+    function PontoVirgula(str: string): string;
+    function numeroFracionado(sValor: string): boolean;
+    function gerarDigitoZero(valor : String; qtdeZero : Integer) : String;
+
+    function PreencherString(S:Variant; Caracter:Char; Tamanho:Integer; DireitaEsquerda:Char):String;
+
+    function gerarEspaco(valor : String; qtdeEspaco : Integer) : String;
+
+    function DifDias(DataVenc : TDateTime; DataAtual: TDateTime) : Integer;
+    function validaCpf(cpf : String) : boolean;
+    function pegaUrl(url : String) : String;
+    function descontoPercentual(valor : Real; desconto : Real) : Real;
+    function descontoValor(valor : Real; desconto : Real) : Real;
+    function extenso(valor: real): string;
+	  function formataIdentificador(identificador: String): String;  
+    function isCpf(cpf : String) : boolean;
+    function isCnpj(numCNPJ : String) : boolean;
+    function isEmail(email: string): boolean;
+    function VerificarInscEstadual(IE:String):Boolean;
+    function formatarBanco(sValor: string; iQuant: integer): string;
+    function StrCurrToCurrDef(AString: string; Default: Currency): Currency;
+    function StrToCurrency(sValor: string): currency;
+    function MixCase(sInString: string): string;
+    function RemoveAcento(Str: string): string;
+    function removePonto(sValor: string): string;
+    function getCodigoInterno(sString: string): string;
+    Function InverteString(S:String ):String;
+    function ReverteString(S: String): String;
+    function Arredondar(eValor: extended; siQtdeDecimais: smallint): extended;
+
+
+    constructor Create;
+  end;
+
+implementation
+
+function TValidar.Arredondar(eValor: extended;
+  siQtdeDecimais: smallint): extended;
+var
+  iMultiplo10, iCount: integer;
+begin
+  iMultiplo10 := 1;
+
+  for iCount := 1 to siQtdeDecimais  do
+      iMultiplo10 := iMultiplo10 * 10;
+
+  if iCount = 0 then
+     result := Round(eValor)
+  else
+     result := Round(eValor * iMultiplo10 ) / iMultiplo10;
+end;
+
+constructor TValidar.Create;
+begin
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+function TValidar.PontoVirgula(str: string): string;
+  var
+  i: integer;
+begin
+  for i := 1 to length(str) do
+    if str[i] = '.' then
+       str[i] := ',';
+
+  result := str;
+end;
+
+function TValidar.descontoPercentual(valor, desconto: Real): Real;
+var
+  valorDescontado : Real;
+begin
+  valorDescontado := (valor * desconto)/100;
+
+  Result := valorDescontado;
+end;
+
+function TValidar.descontoValor(valor, desconto: Real): Real;
+begin
+  Result := valor - desconto;
+end;
+
+Function TValidar.isCNPJ(numCNPJ: string): boolean;
+var
+  cnpj: string;
+  dg1, dg2: integer;
+  x, total: integer;
+  ret: boolean;
+begin
+ret:=False;
+cnpj:='';
+//Analisa os formatos
+if Length(numCNPJ) = 18 then
+    if (Copy(numCNPJ,3,1) + Copy(numCNPJ,7,1) + Copy(numCNPJ,11,1) + Copy(numCNPJ,16,1) = '../-') then
+        begin
+        cnpj:=Copy(numCNPJ,1,2) + Copy(numCNPJ,4,3) + Copy(numCNPJ,8,3) + Copy(numCNPJ,12,4) + Copy(numCNPJ,17,2);
+        ret:=True;
+        end;
+if Length(numCNPJ) = 14 then
+    begin
+    cnpj:=numCNPJ;
+    ret:=True;
+    end;
+//Verifica
+if ret then
+    begin
+    try
+        //1∞ digito
+        total:=0;
+        for x:=1 to 12 do
+            begin
+            if x < 5 then
+                Inc(total, StrToInt(Copy(cnpj, x, 1)) * (6 - x))
+            else
+                Inc(total, StrToInt(Copy(cnpj, x, 1)) * (14 - x));
+            end;
+        dg1:=11 - (total mod 11);
+        if dg1 > 9 then
+            dg1:=0;
+        //2∞ digito
+        total:=0;
+        for x:=1 to 13 do
+            begin
+            if x < 6 then
+                Inc(total, StrToInt(Copy(cnpj, x, 1)) * (7 - x))
+            else
+                Inc(total, StrToInt(Copy(cnpj, x, 1)) * (15 - x));
+            end;
+        dg2:=11 - (total mod 11);
+        if dg2 > 9 then
+            dg2:=0;
+        //ValidaÁ„o final
+        if (dg1 = StrToInt(Copy(cnpj, 13, 1))) and (dg2 = StrToInt(Copy(cnpj, 14, 1))) then
+            ret:=True
+        else
+            ret:=False;
+    except
+        ret:=False;
+        end;
+    //Inv·lidos
+    //case AnsiIndexStr(cnpj,['00000000000000','11111111111111','22222222222222','33333333333333','44444444444444',
+    //                       '55555555555555','66666666666666','77777777777777','88888888888888','99999999999999']) of
+    //    0..9:   ret:=False;
+    //    end;
+    end;
+   Result := ret;
+end;
+
+function TValidar.isEmail(email: string): boolean;
+const
+  atom_chars = [#33..#255] - ['(', ')', '<', '>', '@', ',', ';', ':','\', '/', '"', '.', '[', ']', #127];
+  quoted_string_chars = [#0..#255] - ['"', #13, '\'];
+  letters = ['A'..'Z', 'a'..'z'];
+  letters_digits = ['0'..'9', 'A'..'Z', 'a'..'z'];
+  subdomain_chars = ['-', '0'..'9', 'A'..'Z', 'a'..'z'];
+type
+  States = (STATE_BEGIN, STATE_ATOM, STATE_QTEXT, STATE_QCHAR,
+        STATE_QUOTE, STATE_LOCAL_PERIOD, STATE_EXPECTING_SUBDOMAIN,
+        STATE_SUBDOMAIN, STATE_HYPHEN);
+var
+  State: States;
+  i, n, subdomains: integer;
+  c: char;
+begin
+  State := STATE_BEGIN;
+  n := Length(email);
+  i := 1;
+  subdomains := 1;
+  while (i <= n) do begin
+        c := email[i];
+        case State of
+        STATE_BEGIN:
+          if c in atom_chars then
+                State := STATE_ATOM
+          else if c = '"' then
+                State := STATE_QTEXT
+          else
+                break;
+        STATE_ATOM:
+          if c = '@' then
+                State := STATE_EXPECTING_SUBDOMAIN
+          else if c = '.' then
+                State := STATE_LOCAL_PERIOD
+          else if not (c in atom_chars) then
+                break;
+        STATE_QTEXT:
+          if c = '\' then
+                State := STATE_QCHAR
+          else if c = '"' then
+                State := STATE_QUOTE
+          else if not (c in quoted_string_chars) then
+                break;
+        STATE_QCHAR:
+          State := STATE_QTEXT;
+        STATE_QUOTE:
+          if c = '@' then
+                State := STATE_EXPECTING_SUBDOMAIN
+          else if c = '.' then
+                State := STATE_LOCAL_PERIOD
+          else
+                break;
+        STATE_LOCAL_PERIOD:
+          if c in atom_chars then
+                State := STATE_ATOM
+          else if c = '"' then
+                State := STATE_QTEXT
+          else
+                break;
+        STATE_EXPECTING_SUBDOMAIN:
+          if c in letters then
+                State := STATE_SUBDOMAIN
+          else
+                break;
+        STATE_SUBDOMAIN:
+          if c = '.' then begin
+                inc(subdomains);
+                State := STATE_EXPECTING_SUBDOMAIN
+          end else if c = '-' then
+                State := STATE_HYPHEN
+          else if not (c in letters_digits) then
+                break;
+        STATE_HYPHEN:
+          if c in letters_digits then
+                State := STATE_SUBDOMAIN
+          else if c <> '-' then
+                break;
+        end;
+        inc(i);
+  end;
+  if i <= n then
+        Result := False
+  else
+        Result := (State = STATE_SUBDOMAIN) and (subdomains >= 2);
+end;
+
+function TValidar.formataIdentificador(identificador: String): String;
+Var
+  cpfOrCnpj, cont : Integer;
+  retorno : String;
+begin
+cpfOrCnpj := Length(identificador);
+For cont := 1 To cpfOrCnpj Do
+   If (Copy(identificador,cont,1) <> '.') And (Copy(identificador,cont,1) <> '-') And (Copy(identificador,cont,1) <> '/') Then
+      retorno := retorno + Copy(identificador,cont,1);
+
+    identificador := retorno;
+    cpfOrCnpj := Length(identificador);
+    retorno := '';
+    //vDoc := '';
+
+For cont := 1 To cpfOrCnpj Do
+   begin
+   retorno := retorno + Copy(identificador,cont,1);
+   If cpfOrCnpj = 11 Then
+      begin
+      If (cont in [3,6]) Then retorno := retorno + '.';
+      If cont = 9 Then retorno := retorno + '-';
+      end;
+   If cpfOrCnpj = 14 Then
+      begin
+      If (cont in [2,5]) Then retorno := retorno + '.';
+      If cont = 8 Then retorno := retorno + '/';
+      If cont = 12 Then retorno := retorno + '-';
+      end;
+   end;
+Result := retorno;
+end;
+
+function TValidar.isCpf(cpf: String): boolean;
+var
+ i, numero, resto: integer;
+ dv1, dv2: byte;
+ total, soma: integer;
+begin
+ result := false;
+ if length(cpf) = 11 then
+ begin
+  total := 0 ;
+  soma := 0 ;
+  for i := 1 to 9 do
+  begin
+   try
+     numero := StrToInt(cpf[i]);
+   except
+     numero := 0;
+   end;
+
+   total := total + (numero * ( 11 - i));
+   soma := soma + numero;
+  end;
+  resto := total mod 11 ;
+  if resto > 1 then
+   dv1 := 11 - resto
+  else
+   dv1 := 0 ;
+  total := total + soma + 2 * dv1;
+  resto := total mod 11 ;
+
+  if resto > 1 then
+   dv2 := 11 - resto
+  else
+   dv2 := 0 ;
+
+  if (dv1 = StrToInt(cpf[ 10 ])) and
+    (dv2 = StrToInt(cpf[ 11 ])) then
+    result := true;
+ end;
+end;
+
+function TValidar.DifDias(DataVenc, DataAtual: TDateTime) : Integer;
+var
+  contadorDias  : Integer;
+  dia, mes, ano : Word;
+begin
+  if DataAtual <= DataVenc then
+  begin
+    Result := 0;
+  end
+  else
+  begin
+    contadorDias :=  DaysBetween(DataVenc,DataAtual);
+    Result := contadorDias;
+  end;
+end;
+
+function TValidar.gerarDigitoZero(valor: String; qtdeZero: Integer): String;
+var
+  i : integer;
+  valorAux : String;
+begin
+  valorAux := '';
+  for I := length(valor) downto 1 do
+  begin
+    valorAux := valorAux + valor[i];
+  end;
+  for I := Length(valor)+1 to qtdeZero do
+  begin
+    valorAux := valorAux + '0';
+  end;
+  valor := '';
+  for I := Length(valorAux) downto 1 do
+  begin
+    valor:= valor + valorAux[i];
+  end;
+
+  Result := valor;
+
+end;
+
+function TValidar.extenso (valor: real): string;
+var
+
+Centavos, Centena, Milhar, Milhao, Texto, msg: string;
+const
+Unidades: array[1..9] of string = ('Um', 'Dois', 'Tres', 'Quatro', 'Cinco', 'Seis', 'Sete', 'Oito', 'Nove');
+Dez: array[1..9] of string = ('Onze', 'Doze', 'Treze', 'Quatorze', 'Quinze', 'Dezesseis', 'Dezessete', 'Dezoito', 'Dezenove');
+Dezenas: array[1..9] of string = ('Dez', 'Vinte', 'Trinta', 'Quarenta', 'Cinquenta', 'Sessenta', 'Setenta', 'Oitenta', 'Noventa');
+Centenas: array[1..9] of string = ('Cento', 'Duzentos', 'Trezentos', 'Quatrocentos', 'Quinhentos', 'Seiscentos', 'Setecentos', 'Oitocentos', 'Novecentos');
+
+function ifs(Expressao: Boolean; CasoVerdadeiro, CasoFalso: String): String;
+begin
+  if Expressao then
+    Result := CasoVerdadeiro
+  else
+    Result := CasoFalso;
+end;
+
+function MiniExtenso (trio: string): string;
+var
+  Unidade, Dezena, Centena: string;
+begin
+  Unidade:='';
+  Dezena:='';
+  Centena:='';
+  if (trio[2]='1') and (trio[3]<>'0') then
+  begin
+    Unidade:=Dez[strtoint(trio[3])];
+    Dezena:='';
+  end
+  else
+  begin
+    if trio[2]<>'0' then Dezena:=Dezenas[strtoint(trio[2])];
+    if trio[3]<>'0' then Unidade:=Unidades[strtoint(trio[3])];
+  end;
+  if (trio[1]='1') and (Unidade='') and (Dezena='') then
+    Centena:='cem'
+  else
+  if trio[1]<>'0'then
+    Centena:=Centenas[strtoint(trio[1])]
+  else
+    Centena:='';
+
+  Result:= Centena + ifs((Centena<>'') and ((Dezena<>'') or (Unidade<>'')), ' e ', '')
++ Dezena + ifs((Dezena<>'') and (Unidade<>''),' e ', '') + Unidade;
+end;
+begin
+  if (valor>999999.99) or (valor<0) then
+  begin
+    msg:='O valor est· fora do intervalo permitido.';
+    msg:=msg+'O n˙mero deve ser maior ou igual a zero e menor que 999.999,99.';
+    msg:=msg+' Se n„o for corrigido o n˙mero n„o ser· escrito por extenso.';
+    raise Exception.Create(msg);
+    Result:='';
+    exit;
+  end;
+  if valor=0 then
+  begin
+    Result:='';
+    Exit;
+  end;
+  Texto:=formatfloat('000000.00',valor);
+  Milhar:=MiniExtenso(Copy(Texto,1,3));
+  Centena:=MiniExtenso(Copy(Texto,4,3));
+  Centavos:=MiniExtenso('0'+Copy(Texto,8,2));
+  Result:=Milhar;
+  if Milhar<>'' then
+    if copy(texto,4,3)='000' then
+      Result:=Result+' Mil Reais'
+    else
+      Result:=Result+' Mil, ';
+  if (((copy(texto,4,2)='00') and (Milhar<>'')
+  and (copy(texto,6,1)<>'0')) or (centavos=''))
+  and (Centena<>'') then Result:=Result+'';
+    if (Milhar+Centena <>'') then Result:=Result+Centena;
+     if (Milhar='') and (copy(texto,4,3)='001') then
+       Result:=Result+' Real'
+     else
+       if (copy(texto,4,3)<>'000') then
+         Result:=Result+' Reais';
+  if Centavos='' then
+  begin
+    Result:=Result+'.';
+    Exit;
+  end
+  else
+  begin
+  if Milhar+Centena='' then
+    Result:=Centavos
+  else
+    Result:=Result+', e '+Centavos;
+  if (copy(texto,8,2)='01') and (Centavos<>'') then
+    Result:=Result+' Centavo.'
+  else
+    Result:=Result+' Centavos.';
+end;
+end;
+
+function TValidar.pegaUrl(url: String): String;
+var
+  i : integer;
+  t : integer;
+  aux : String;
+begin
+  t := Length(url);
+  for I := (Length(url) - 5) downto 1 do
+    begin
+      if url[i] <> '/' then
+        aux := aux + url[i]
+      else
+        break;
+    end;
+   url := '';
+   aux := aux + '/';
+   for I := length(aux) downto 1 do
+     url := url + aux[i];
+
+  Result := LowerCase(url);
+      
+end;
+
+function TValidar.validaCpf(cpf: String): boolean;
+var
+ i, numero, resto: integer;
+ dv1, dv2: byte;
+ total, soma: integer;
+begin
+ result := false;
+ if length(cpf) = 11 then
+ begin
+  total := 0 ;
+  soma := 0 ;
+  for i := 1 to 9 do
+  begin
+   try
+     numero := StrToInt(cpf[i]);
+   except
+     numero := 0;
+   end;
+
+   total := total + (numero * ( 11 - i));
+   soma := soma + numero;
+  end;
+  resto := total mod 11 ;
+  if resto > 1 then
+   dv1 := 11 - resto
+  else
+   dv1 := 0 ;
+  total := total + soma + 2 * dv1;
+  resto := total mod 11 ;
+
+  if resto > 1 then
+   dv2 := 11 - resto
+  else
+   dv2 := 0 ;
+
+  if (dv1 = StrToInt(cpf[ 10 ])) and
+    (dv2 = StrToInt(cpf[ 11 ])) then
+    result := true;
+
+ end;
+
+end;
+
+function TValidar.VerificarInscEstadual(IE: String): Boolean;
+var nIE : String;
+  I: Integer;
+  soma,mult,resto : integer;
+begin
+result := false;
+
+  for I := 1 to Length(IE) - 1 do    // Iterate
+  begin
+    if ((IE[I] <> '.') and (IE[I] <> '-')) then
+       nIE := nIE + IE[I];
+  end;    // for
+
+  soma := strtoint(nIE[1]) * 9;
+  soma := soma + strtoint(nIE[2]) * 8;
+  soma := soma + strtoint(nIE[3]) * 7;
+  soma := soma + strtoint(nIE[4]) * 6;
+  soma := soma + strtoint(nIE[5]) * 5;
+  soma := soma + strtoint(nIE[6]) * 4;
+  soma := soma + strtoint(nIE[7]) * 3;
+  soma := soma + strtoint(nIE[8]) * 2;
+
+  mult := soma * 10;
+
+  resto := mult mod 11;
+
+  //Label2.Caption := inttostr(soma) + ' ' + inttostr(mult) + ' ' + inttostr(resto);
+
+  if resto = 1 then
+    result := True
+  else
+    result := false;
+
+end;
+
+function TValidar.VirgulaPonto(str: String): String;
+var
+  i: integer;
+begin
+  for i := 1 to length(str) do
+    if str[i] = ',' then
+       str[i] := '.';
+
+  result := str;
+end;
+
+function TValidar.formatarBanco(sValor: string; iQuant: integer): string;
+begin
+  case Length(sValor) of
+     0: result := '';
+     1: result := 'R$ 0,0'+sValor;
+     2: result := 'R$ 0,'+sValor;
+     3: result := FormatMaskText('R$ 0,00;0', sValor);
+     4: result := FormatMaskText('R$ 00,00;0', sValor);
+     5: result := FormatMaskText('R$ 000,00;0', sValor);
+     6: result := FormatMaskText('R$ 0.000,00;0', sValor);
+     7: result := FormatMaskText('R$ 00.000,00;0', sValor);
+     8: result := FormatMaskText('R$ 000.000,00;0', sValor);
+  end;
+end;
+
+function TValidar.StrCurrToCurrDef(AString: string;
+  Default: Currency): Currency;
+begin
+  {
+  AString := StringReplace(AString, ThousandSeparator, '', [rfReplaceAll]);
+  AString := StringReplace(AString, CurrencyString, '', [rfReplaceAll]);
+  Result  := StrToCurrDef(AString, Default);
+  }
+end;
+
+function TValidar.MixCase(sInString: string): string;
+var
+ I: Integer;
+begin
+  Result := LowerCase(sInString);
+  Result[1] := UpCase(Result[1]);
+  for I := 1 To Length(sInString) - 1 Do
+  begin
+    if (Result[I] = ' ') Or (Result[I] = '''') Or (Result[I] = '"')
+    or (Result[I] = '-') Or (Result[I] = '.')  Or (Result[I] = '(') then
+      Result[I + 1] := UpCase(Result[I + 1]);
+  end;
+end;
+
+function TValidar.numeroFracionado(sValor: string): boolean;
+var
+  iCount  : integer;
+  bRetorno: boolean;
+begin
+  bRetorno := false;
+  for iCount := 1 to length(sValor) do
+  begin
+    if (sValor[iCount] = ',') or (sValor[iCount] = '.') then
+    begin
+      bRetorno := true;
+      break;
+    end;
+  end;
+
+  result := bRetorno;
+end;
+
+function TValidar.StrToCurrency(sValor: string): currency;
+var
+  aNum: string;
+  i, x: integer;
+  sNum: string;
+  cValor: currency;
+begin
+  aNum := '0123456789,';
+
+  if sValor = '' then
+     sValor := '0';
+
+  sNum := '';
+  for i := 1 to Length(sValor) do
+  begin
+    for x := 1 to Length(aNum) do
+    begin
+      if (Trim(sValor[i]) = Trim(aNum[x])) then
+          sNum := Trim(sNum) + Trim(sValor[i]);
+    end;
+  end;
+
+  result := StrToFloatDef(sNum, 0);
+end;
+
+function TValidar.RemoveAcento(Str: string): string;
+const
+  ComAcento = '‡‚ÍÙ˚„ı·ÈÌÛ˙Á¸¿¬ ‘€√’¡…Õ”⁄«‹';
+  SemAcento = 'aaeouaoaeioucuAAEOUAOAEIOUCU';
+var
+   x: Integer;
+begin;
+  for x := 1 to Length(Str) do
+  if Pos(Str[x],ComAcento) <> 0 then
+    Str[x] := SemAcento[Pos(Str[x], ComAcento)];
+  Result := Str;
+end;
+
+function TValidar.removePonto(sValor: string): string;
+var
+  aNum: string;
+  i, x: integer;
+  sNum: string;
+begin
+  aNum := '0123456789,';
+
+  sNum := '';
+  for i := 1 to Length(sValor) do
+  begin
+    for x := 1 to Length(aNum) do
+    begin
+      if (Trim(sValor[i]) = Trim(aNum[x])) then
+          sNum := Trim(sNum) + Trim(sValor[i]);
+    end;
+  end;
+
+  result := sNum;
+end;
+
+function TValidar.ReverteString(S: String): String;
+var
+i: integer;
+sStr: string;
+begin
+  sStr := '';
+  for i := 0 to Length( S ) do
+     sStr := sStr + Copy(S,i,1 );
+
+  result := sStr;
+end;
+
+function TValidar.gerarEspaco(valor: String; qtdeEspaco: Integer): String;
+var
+  i : integer;
+  valorAux : String;
+begin
+    valorAux := '';
+    for I := length(valor) downto 1 do
+    begin
+      valorAux := valorAux + valor[i];
+    end;
+
+    for I := Length(valor)+1 to qtdeEspaco do
+    begin
+      valorAux := valorAux + ' ';
+    end;
+
+    valor := '';
+    for I := Length(valorAux) downto 1 do
+    begin
+      valor:= valor + valorAux[i];
+    end;
+  Result := valor;
+end;
+
+
+function TValidar.getCodigoInterno(sString: string): string;
+var
+  Str: string;
+begin
+  Str := ReverseString(sString);
+  Str := Copy(Str, 7, 8);
+  result := Str;
+end;
+
+function TValidar.InverteString(S: String): String;
+var
+i: integer;
+sStr: string;
+begin
+  sStr := '';
+  for i := Length( S ) DownTo 1 do
+     sStr := sStr + Copy(S,i,1 );
+
+  result := sStr;
+end;
+
+function TValidar.PreencherString(S: Variant; Caracter: Char;
+  Tamanho: Integer; DireitaEsquerda: Char): String;
+var ValorStr : String;
+    Cont     : Byte;
+begin
+  if (VarType(S)<>VarString) and (VarType(S)<>VarEmpty) then
+     S := '';
+
+  if Trim(S)<>'' then
+     ValorStr := Copy(Trim(S),1,Tamanho)
+  else
+     ValorStr := '';
+  Cont     := Tamanho - Length(ValorStr);
+  While Cont > 0 do
+    if UpperCase(DireitaEsquerda)='D' then
+     begin
+       ValorStr := ValorStr+Caracter;
+       Cont     := Cont - 1;
+     end
+    else
+       if UpperCase(DireitaEsquerda)='E' then
+        begin
+          ValorStr := Caracter+ValorStr;
+          Cont     := Cont - 1;
+        end;
+  Result := ValorStr;
+end;
+
+end.

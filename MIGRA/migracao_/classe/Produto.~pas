@@ -1,0 +1,201 @@
+unit Produto;
+
+interface
+
+uses
+  TipoProduto, Unidade, Graphics, jpeg,
+  SysUtils, Variants, Classes,  Controls,
+  Dialogs, StdCtrls, ExtCtrls,
+  SubSecao, PessoaImpl, StatusGrupo, Marca;
+
+type
+  TProduto = class
+   FCodigo: integer;
+    FDescricao: string;
+    FQtde: double;
+    FQtdeAtendida: double;
+    FRequisicao: integer;
+    FIPPT: string;
+    FCFOP: string;
+    FAliquotaIpi: extended;
+    FPercentBaseCalcIcms: extended;
+    FPercBaseIcmsCalcSubs: extended;
+    FAliquotaIcms: extended;
+    FcValor: currency;
+    FCST: string;
+    FNCM: string;
+  private
+    FBalanca: string;
+    procedure SetsBalanca(const Value: string);
+    { Private Declarations }
+  public
+    cod               : string;
+    lote              : string;
+    tipoproduto       : TTipoProduto;
+    unidade           : TUnidade;
+    unidadeSaida      : TUnidade;
+    garantia          : string;
+    subsecao          : TSubSecao;
+    valor             : string;
+    garantiainicio    : TDate;
+    garantiafim       : TDate;
+    acresextra1       : double;
+    acresextra2       : double;
+    acresextra3       : double;
+    acresreal1        : double;
+    acresreal2        : double;
+    acresreal3        : double;
+    extra1            : double;
+    extra2            : double;
+    extra3            : double;
+    extrareal1        : double;
+    extrareal2        : double;
+    extrareal3        : double;
+    comissaoValor     : double;
+    comissaoPercentual: double;
+    valorCompra       : double;
+    descontoMaximo    : double;
+    bCalcIcms         : double;
+    bCalcIcmsSubs     : double;
+    descricaoFiscal   : string;
+    codigoBarra       : string;
+    codigoBarraImport : string;
+    estoqueminimo     : double;
+    estoquemaximo     : double;
+    sVendaDiferenciada: string;
+    sConstanteCalculo : string;
+    Fornecedor        : TPessoaImpl;
+    Status            : TStatusGrupo;
+    Marca             : TMarca;
+    sReferencia       : string;
+    //FornecedorLista   : ArrayList;
+    sGenero           : string;
+
+    //aOperacao         : ArrayList;
+
+    {Array de Item para Produção}
+    //aItems : ArrayList;
+    constructor Create;
+    procedure SetDescricao(const Value: string);
+    procedure SetCodigo(const Value: integer);
+    procedure SetQtde(const Value: double);
+    procedure SetQtdeAtendida(const Value: double);
+    procedure SetRequisicao(const Value: integer);
+    procedure SetIPPT(const Value: string);
+    procedure SetAliquotaIcms(const Value: extended);
+    procedure SetAliquotaIpi(const Value: extended);
+    procedure SetCFOP(const Value: string);
+    procedure SetPercBaseIcmsCalcSubs(const Value: extended);
+    procedure SetPercentBaseCalcIcms(const Value: extended);
+    procedure SetcValor(const Value: currency);
+    procedure SetCST(const Value: string);
+    procedure SetNCM(const Value: string);
+    property Codigo: integer read FCodigo write SetCodigo;
+    property Descricao: string read FDescricao write SetDescricao;
+    property CST: string read FCST write SetCST;
+    property NCM: string read FNCM write SetNCM;
+    {Propriedade criada para atender requsição com mais de um produto}
+    property Qtde: double read FQtde write SetQtde;
+    property QtdeAtendida: double read FQtdeAtendida write SetQtdeAtendida;
+    property Requisicao: integer read FRequisicao write SetRequisicao;
+    property sIPPT: string read FIPPT write SetIPPT;
+    property CFOP: string read FCFOP write SetCFOP;
+    property AliquotaIcms: extended read FAliquotaIcms write SetAliquotaIcms;
+    property AliquotaIpi: extended read FAliquotaIpi write SetAliquotaIpi;
+    property PercBaseIcmsCalcSubs: extended read FPercBaseIcmsCalcSubs write SetPercBaseIcmsCalcSubs;
+    property PercentBaseCalcIcms: extended read FPercentBaseCalcIcms write SetPercentBaseCalcIcms;
+    property cValor: currency read  FcValor write SetcValor;
+    property sBalanca: string read FBalanca write SetsBalanca;
+  end;
+
+implementation
+
+constructor TProduto.Create;
+begin
+  tipoproduto  := TTipoProduto.Create;
+  unidade      := TUnidade.Create;
+  unidadeSaida := TUnidade.Create;
+  subsecao     := TSubSecao.Create;
+  Fornecedor   := TPessoaImpl.Create;
+  Status       := TStatusGrupo.Create;
+  Marca             := TMarca.Create;
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+procedure TProduto.SetAliquotaIcms(const Value: extended);
+begin
+  FAliquotaIcms := Value;
+end;
+
+procedure TProduto.SetAliquotaIpi(const Value: extended);
+begin
+  FAliquotaIpi := Value;
+end;
+
+procedure TProduto.SetsBalanca(const Value: string);
+begin
+  FBalanca := Value;
+end;
+
+procedure TProduto.SetCFOP(const Value: string);
+begin
+  FCFOP := Value;
+end;
+
+procedure TProduto.SetCodigo(const Value: integer);
+begin
+  FCodigo := Value;
+end;
+
+procedure TProduto.SetCST(const Value: string);
+begin
+  FCST := Value;
+end;
+
+procedure TProduto.SetcValor(const Value: currency);
+begin
+  FcValor := Value;
+end;
+
+procedure TProduto.SetDescricao(const Value: string);
+begin
+  FDescricao := Value;
+end;
+
+procedure TProduto.SetIPPT(const Value: string);
+begin
+  FIPPT := Value;
+end;
+
+procedure TProduto.SetNCM(const Value: string);
+begin
+  FNCM := Value;
+end;
+
+procedure TProduto.SetPercBaseIcmsCalcSubs(const Value: extended);
+begin
+  FPercBaseIcmsCalcSubs := Value;
+end;
+
+procedure TProduto.SetPercentBaseCalcIcms(const Value: extended);
+begin
+  FPercentBaseCalcIcms := Value;
+end;
+
+procedure TProduto.SetQtde(const Value: double);
+begin
+  FQtde := Value;
+end;
+
+procedure TProduto.SetQtdeAtendida(const Value: double);
+begin
+  FQtdeAtendida := Value;
+end;
+
+procedure TProduto.SetRequisicao(const Value: integer);
+begin
+  FRequisicao := Value;
+end;
+
+end.

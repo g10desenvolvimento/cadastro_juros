@@ -1,0 +1,45 @@
+unit VendaCliente;
+
+interface
+
+uses
+  Notafiscal;
+
+type
+  TVendaCliente = class
+  private
+    { Private Declarations }
+  public
+    codigo                : integer;
+    vendedorid            : integer;
+    vendedorPesquisa      : String;
+    clienteid             : integer;
+    clientePesquisa       : String;
+    modalidadepagamentoid : integer;
+    modalidadePesquisa    : String;
+    numeropedido          : String;
+    totalvenda            : real;
+    datavenda             : TDateTime;
+    statusid              : integer;
+    statusPesquisa        : String;
+    obs                   : String;
+    tipoRme               : integer;
+    tituloid              : integer;
+    numeroDocumento       : String;
+    usuarioid             : integer;
+    vendaDia              : DateTime;
+    obsFiscal             : String;
+    notaFiscal            : TNotaFiscal;
+    constructor Create;
+  end;
+
+implementation
+
+constructor TVendaCliente.Create;
+begin
+  notaFiscal := TNotaFiscal.Create;
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+end.

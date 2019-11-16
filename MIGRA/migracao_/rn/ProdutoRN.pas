@@ -1,0 +1,612 @@
+unit ProdutoRN;
+
+interface
+uses
+  Produto, ProdutoDAO; //System.Data, SysUtils, PessoaImpl, Laje, System.Collections,
+  //NFMovimento;
+
+type
+  TProdutoRN = class
+  private
+       { Private Declarations }
+  public
+    {constructor Create;
+    {Procedures }
+    {procedure Excluir(Produto: TProduto);
+    procedure incluirProdutoConstante(Produto: TProduto; eConstante: extended);
+    procedure alterarProdutoConstante(Produto: TProduto);
+    procedure excluirProdutoConstante(Produto: TProduto);
+    procedure ExcluirFornecedor(Produto: TProduto; action: string);
+    procedure salvarDimensoes(Laje: TLaje);
+    procedure excluirDimensoes(Laje: TLaje);
+    {Functions }
+    function InsertOrUpdate(Produto: TProduto; acao: string): integer;
+    procedure incluirEstoque(Produto: TProduto);
+    procedure editar(produto: TProduto);
+    function setEditarCodigo_ECO_LAR(sCodigo, sCodigoBarra: string): boolean;
+
+    {function incluirProdutoFornecedor(Produto: TProduto): integer;
+    function preencheGridPesquisa(Produto: TProduto; orderby: string): DataSet;
+    function preencheGridFornecedor(Produto: TProduto; orderby: string): DataSet;
+    function listarConstantes(Produto: TProduto; sOrderBy: string): DataSet;
+    function existeProdutoConstante(Produto: TProduto): boolean;
+    function listaUnidade: DataSet;
+    function listaSubSecao: DataSet;
+    function listaTipoProduto: DataSet;
+    function listaFornecedor(sNome: string): DataSet;
+    function listaProdutoConstate: DataSet;
+    function ExcluirProduto(Produto: TProduto): integer;
+    function numeroProduto: string;
+    function gerarCodigoBarra: string;
+    function listaLaje(sNumeroPedido: string): DataSet;
+    function getCpfCnpjFornecedor(iCodigo: integer): string;
+    function getFornecedor(Produto: TProduto): ArrayList;
+    function getEstoque(Produto: TProduto): DataSet;
+    function getTotalEstoque(Produto: TProduto): string;
+    function listaProduto: DataSet;
+    function getProdutoProducaoPropria(Produto: TProduto; bTodos: boolean): DataSet;
+    function getNFMovimento: DataSet;
+    function getNaturezaOperacao(NFMovimento: TNFMovimento): DataSet;
+    function getCFOPProduto(Produto: TProduto): ArrayList;}
+
+    function pessoaExiste(CodigoImportcao: string): boolean;
+    function codigoExiste(codigo: string): boolean;
+    function getGrupo(Descricao: string): string;
+    function pessoaExisteNome(Nome: string): boolean;
+
+    function getGrupoPorCodigo(sCodigo: string): string;
+    function getGrupoPorMarca(sCodigo: string): string;
+
+    function gerarCodigo: string;
+  end;
+
+implementation
+{
+procedure TProdutoRN.alterarProdutoConstante(Produto: TProduto);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    ProdutoDao.alterarProdutoConstante(Produto);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+constructor TProdutoRN.Create;
+begin
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+procedure TProdutoRN.Excluir(Produto: TProduto);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    if ProdutoDao.ExistePreVenda(Produto) then
+       raise Exception.Create('Existe Venda cadastrada para este Produto. Por este motivo o mesmo não poderá ser excluído.');
+
+    if Produto.codigo = null  then
+       raise Exception.Create('A Produto não foi informado!');
+
+    ProdutoDao.excluir(Produto);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+procedure TProdutoRN.excluirDimensoes(Laje: TLaje);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    ProdutoDao.excluirDimensoes(Laje);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+procedure TProdutoRN.ExcluirFornecedor(Produto: TProduto; action: String);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    if produto.fornecedor.codigo = null  then
+       raise Exception.Create('O código do fornecedor é inválido!');
+
+    ProdutoDao.ExcluirFornecedor(Produto, action);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.ExcluirProduto(Produto: TProduto): integer;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    if Produto.codigo = null  then
+       raise Exception.Create('O código do Produto é nulo!');
+
+    ProdutoDao.ExcluirFornecedor(Produto,'2');
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+procedure TProdutoRN.excluirProdutoConstante(Produto: TProduto);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    ProdutoDao.excluirProdutoConstante(Produto);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.existeProdutoConstante(Produto: TProduto): boolean;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    Result := ProdutoDao.existeProdutoConstante(Produto);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.gerarCodigoBarra: String;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    Result := ProdutoDao.gerarCodigoBarra;
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+function TProdutoRN.getCFOPProduto(Produto: TProduto): ArrayList;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.getCFOPProduto(Produto);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getCpfCnpjFornecedor(iCodigo: integer): string;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.getCpfCnpjFornecedor(iCodigo);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getEstoque(Produto: TProduto): DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.getEstoque(Produto);
+  finally
+    ProdutoDao.Free;
+  end
+end;
+
+function TProdutoRN.getFornecedor(Produto: TProduto): ArrayList;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.getFornecedor(Produto);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getNaturezaOperacao(NFMovimento: TNFMovimento): DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.getNaturezaOperacao(NFMovimento);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getNFMovimento: DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.getNFMovimento;
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getProdutoProducaoPropria(Produto: TProduto; bTodos: boolean): DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.getProdutoProducaoPropria(Produto, bTodos);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getTotalEstoque(Produto: TProduto): string;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.getTotalEstoque(Produto);
+  finally
+    ProdutoDao.Free;
+  end
+end;
+
+procedure TProdutoRN.incluirProdutoConstante(Produto: TProduto; eConstante: extended);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    ProdutoDao.incluirProdutoConstante(Produto, eConstante);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.incluirProdutoFornecedor(Produto: TProduto): integer;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    if (Produto.codigo = null) or (Produto.codigo <= 0)  then
+       raise Exception.Create('O código do Produto é nulo!');
+
+    if (Produto.fornecedor.codigo = null) or (Produto.fornecedor.codigo <= 0)  then
+       raise Exception.Create('o Código do Fornecedor é nulo!');
+
+    if ProdutoDao.ExisteFornecedor(Produto,'1') then
+       raise Exception.Create('Fornecedor já cadastrado para este Produto!');
+
+    ProdutoDao.incluirProdutoFornecedor(Produto);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.listaFornecedor(sNome: string): DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.listaFornecedor(sNome);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.listaLaje(sNumeroPedido: string): DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.listaLaje(sNumeroPedido);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.listaProduto: DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.listaProduto;
+  finally
+    ProdutoDao.Free;
+  end
+end;
+
+function TProdutoRN.listaProdutoConstate: DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.listaProdutoConstate;
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.listarConstantes(Produto: TProduto; sOrderBy: string): DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.listarConstantes(Produto, sOrderBy);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.listaSubSecao: DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.listaSubSecao;
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.listaTipoProduto: DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.listaTipoProduto;
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.listaUnidade: DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.listaUnidade;
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.numeroProduto: String;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    Result := ProdutoDao.numeroProduto;
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.preencheGridFornecedor(produto: TProduto;
+  orderby: String): DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.preencheGridFornecedor(produto, orderby);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.preencheGridPesquisa(Produto: TProduto;
+  orderby: String): DataSet;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    result := ProdutoDao.preencheGridPesquisa(Produto, orderby);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+
+procedure TProdutoRN.salvarDimensoes(Laje: TLaje);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+
+    ProdutoDao.salvarDimensoes(Laje);
+  finally
+    ProdutoDao.Free;
+  end;
+end;
+}
+function TProdutoRN.codigoExiste(codigo: string): boolean;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.codigoExiste(codigo);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+procedure TProdutoRN.editar(produto: TProduto);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    ProdutoDao.editar(Produto);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.gerarCodigo: string;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.gerarCodigo;
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getGrupo(Descricao: string): string;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result := ProdutoDao.getGrupo(Descricao);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getGrupoPorCodigo(sCodigo: string): string;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result := ProdutoDao.getGrupoPorCodigo(sCodigo);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.getGrupoPorMarca(sCodigo: string): string;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result := ProdutoDao.getGrupoPorMarca(sCodigo);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+procedure TProdutoRN.incluirEstoque(Produto: TProduto);
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    ProdutoDao.incluirEstoque(Produto);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.InsertOrUpdate(Produto: TProduto;
+  acao: string): integer;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result := ProdutoDao.incluir(Produto);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.pessoaExiste(CodigoImportcao: string): boolean;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.pessoaExiste(CodigoImportcao);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+function TProdutoRN.pessoaExisteNome(Nome: string): boolean;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.pessoaExisteNome(Nome);
+ finally
+    ProdutoDao.Free;
+  end;
+
+end;
+
+function TProdutoRN.setEditarCodigo_ECO_LAR(sCodigo,
+  sCodigoBarra: string): boolean;
+var
+  ProdutoDao: TProdutoDAO;
+begin
+  try
+    ProdutoDao := TProdutoDAO.Create;
+    result     := ProdutoDao.setEditarCodigo_ECO_LAR(sCodigo, sCodigoBarra);
+ finally
+    ProdutoDao.Free;
+  end;
+end;
+
+end.

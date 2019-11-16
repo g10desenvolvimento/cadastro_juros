@@ -1,0 +1,29 @@
+unit Telefone;
+
+interface
+uses
+  TipoEndereco;
+
+type
+  TTelefone = class
+  private
+    { Private Declarations }
+  public
+    codigo       : integer;
+    ddd          : integer;
+    numero       : integer;
+    ramal        : integer;
+    tipoEndereco : TTipoEndereco;
+    constructor Create;
+  end;
+
+implementation
+
+constructor TTelefone.Create;
+begin
+  tipoEndereco := TTipoEndereco.Create;
+  inherited Create;
+  // TODO: Add any constructor code here
+end;
+
+end.
